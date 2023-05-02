@@ -48,7 +48,11 @@ class MainActivity : ComponentActivity() {
     private fun loadTodo() {
         //Jetpack ComposeとKotlin Coroutinesを組み合わせて、非同期処理を行っている。
         //Coroutines・・・非同期処理や並行処理を簡単かつ効率的に行うための軽量なスレッドライク
+        //Flutterで言う、Futureとasync/await構文
+
+        //CoroutineScopeは、ライフサイクルを管理するためのクラス
         CoroutineScope(Dispatchers.Main).launch {
+            //withContextは、コルーチンのContextを一時的に切り替える関数
             withContext(Dispatchers.Default) {
                 dao.getAll().forEach { todo ->
                     todoList.add(todo)
@@ -58,7 +62,9 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun postTodo(title: String) {
+        //UIの状態変化(MainとDefaultの位置が逆になるとエラーになる)
         CoroutineScope(Dispatchers.Main).launch {
+            //バックグラウンドの状態変化
             withContext(Dispatchers.Default) {
                 val id = Math.random()
                 dao.post(Todo(title = title, id = id.toLong()))
@@ -87,9 +93,7 @@ class MainActivity : ComponentActivity() {
                 title = { Text("Todo List（FlutterでいうAppBar）") }
             )
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
+                modifier = Modifier.fillMaxWidth().weight(1f)
             ) {
                 items(todoList) { todo ->
                     key(todo.id) {
@@ -98,17 +102,14 @@ class MainActivity : ComponentActivity() {
                 }
             }
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
+                modifier = Modifier.fillMaxWidth().padding(16.dp)
             ) {
                 OutlinedTextField(
                     value = text,
-                    onValueChange = { it -> text = it },
+                    onValueChange = {it -> text = it},
+                    //onValueChange = { text = it },でもOK
                     label = { Text("ToDo") },
-                    modifier = Modifier
-                        .wrapContentHeight()
-                        .weight(1f)
+                    modifier = Modifier.wrapContentHeight().weight(1f)
                 )
                 Spacer(Modifier.size(16.dp))
                 Button(
@@ -131,14 +132,12 @@ class MainActivity : ComponentActivity() {
     fun TodoItem(todo: Todo) {
         val sdf = SimpleDateFormat("yyyy/MM/dd HH:mm:ss")
 
-        Column(modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(16.dp)
             .clickable { deleteTodo(todo) }) {
             Text(
-                text = todo.title, modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 4.dp)
+                text = todo.title,
+                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
             )
             Text(
                 text = "created at: ${sdf.format(todo.created_at)}",
