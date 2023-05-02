@@ -17,73 +17,26 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.android_todo_app.database.RoomApplication
 import com.example.android_todo_app.model.Todo
 import com.example.android_todo_app.ui.theme.Android_todo_appTheme
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import com.example.android_todo_app.viewmodel.ViewModel
 import java.text.SimpleDateFormat
 
 class MainActivity : ComponentActivity() {
+    private var viewModel = ViewModel()
 
-    private val dao = RoomApplication.database.todoDao()
-    private var todoList = mutableStateListOf<Todo>()
-
-    //flutterでいうinitState
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             Android_todo_appTheme {
-                //FlutterでいうScaffold
                 Surface(
                     color = MaterialTheme.colors.background
                 ) {
-                    MainScreen(todoList)
+                    MainScreen(viewModel.todoList)
                 }
             }
         }
-        loadTodo()
-    }
-
-    private fun loadTodo() {
-        //Jetpack ComposeとKotlin Coroutinesを組み合わせて、非同期処理を行っている。
-        //Coroutines・・・非同期処理や並行処理を簡単かつ効率的に行うための軽量なスレッドライク
-        //Flutterで言う、Futureとasync/await構文
-
-        //CoroutineScopeは、ライフサイクルを管理するためのクラス
-        CoroutineScope(Dispatchers.Main).launch {
-            //withContextは、コルーチンのContextを一時的に切り替える関数
-            withContext(Dispatchers.Default) {
-                dao.getAll().forEach { todo ->
-                    todoList.add(todo)
-                }
-            }
-        }
-    }
-
-    private fun postTodo(title: String) {
-        //UIの状態変化(MainとDefaultの位置が逆になるとエラーになる)
-        CoroutineScope(Dispatchers.Main).launch {
-            //バックグラウンドの状態変化
-            withContext(Dispatchers.Default) {
-                val id = Math.random()
-                dao.post(Todo(title = title, id = id.toLong()))
-                todoList.clear()
-                loadTodo()
-            }
-        }
-    }
-
-    private fun deleteTodo(todo: Todo) {
-        CoroutineScope(Dispatchers.Main).launch {
-            withContext(Dispatchers.Default) {
-                dao.delete(todo)
-                todoList.clear()
-                loadTodo()
-            }
-        }
+        viewModel.loadTodo()
     }
 
     @Composable
@@ -108,7 +61,7 @@ class MainActivity : ComponentActivity() {
             ) {
                 OutlinedTextField(
                     value = text,
-                    onValueChange = {it -> text = it},
+                    onValueChange = { it -> text = it },
                     //onValueChange = { text = it },でもOK
                     label = { Text("ToDo") },
                     modifier = Modifier.wrapContentHeight().weight(1f)
@@ -119,7 +72,8 @@ class MainActivity : ComponentActivity() {
                         //ラベル付きリターン文
                         //即座にリターンすることができます。
                         if (text.isEmpty()) return@Button
-                        postTodo(text)
+                        //postTodo(text)
+                        viewModel.postTodo(text)
                         text = ""
                     },
                     modifier = Modifier.align(Alignment.CenterVertically)
@@ -136,7 +90,7 @@ class MainActivity : ComponentActivity() {
 
         Column(
             modifier = Modifier.fillMaxWidth().padding(16.dp)
-            .clickable { deleteTodo(todo) }) {
+                .clickable { viewModel.deleteTodo(todo) }) {
             Text(
                 text = todo.title,
                 modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
