@@ -1,4 +1,4 @@
-package com.example.android_todo_app
+package com.example.android_todo_app.utils
 
 import androidx.room.TypeConverter
 import java.util.*
